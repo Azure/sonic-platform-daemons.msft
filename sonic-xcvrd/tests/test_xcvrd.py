@@ -3101,6 +3101,9 @@ class TestXcvrdScript(object):
         mock_sfputil.get_transceiver_info_dict = MagicMock(return_value=False)
         assert not _wrapper_get_transceiver_info(1)
 
+        mock_chassis.get_sfp = MagicMock(side_effect=Exception)
+        assert not _wrapper_get_transceiver_info(1)
+
     @patch('xcvrd.xcvrd.platform_chassis')
     @patch('xcvrd.xcvrd.platform_sfputil')
     def test_wrapper_get_transceiver_firmware_info(self, mock_sfputil, mock_chassis):
