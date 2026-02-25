@@ -825,7 +825,7 @@ class TemperatureUpdater(logger.Logger):
             except Exception:
                 pass
 
-        def _get_sfp_temperature_from_db(self, port_name):
+    def _get_sfp_temperature_from_db(self, port_name):
         """
         Get SFP temperature from Redis. First tries TRANSCEIVER_DOM_TEMPERATURE table,
         then falls back to TRANSCEIVER_DOM_SENSOR table. Both are populated by xcvrd daemon.
