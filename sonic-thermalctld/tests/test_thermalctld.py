@@ -1,6 +1,7 @@
 import os
 import sys
 import multiprocessing
+import threading
 from imp import load_source  # TODO: Replace with importlib once we no longer need to support Python 2
 
 # TODO: Clean this up once we no longer need to support Python 2
