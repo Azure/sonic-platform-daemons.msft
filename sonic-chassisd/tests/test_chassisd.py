@@ -1,6 +1,8 @@
 import os
 import sys
 import mock
+import pytest
+import time
 from imp import load_source
 
 from mock import Mock, MagicMock, patch
@@ -968,3 +970,23 @@ def test_chassis_db_bootup_with_empty_slot():
     assert status == fvs[CHASSIS_MODULE_INFO_OPERSTATUS_FIELD]
     assert down_module_lc1_key in sup_module_updater.down_modules.keys()
     
+def test_chassis_daemon_assertion():
+    daemon_chassisd = ChassisdDaemon(SYSLOG_IDENTIFIER)
+
+    # Reduce wait time from 10s to 1s to speed up test
+    daemon_chassisd.loop_interval=1
+
+    # Simulate an Assertion occurring in the forever loop
+    with patch('chassisd.ModuleUpdater.module_db_update', MagicMock(side_effect=AssertionError)):
+        with pytest.raises(AssertionError):
+            daemon_chassisd.run()
+
+    # Wait for the child thread to die
+    start = time.time()
+    timeout = 30
+    while time.time() - start < timeout:
+        if not daemon_chassisd.config_manager._task_process.is_alive():
+            break
+        time.sleep(1)
+    else:
+        assert False, "config_manager thread never died"
