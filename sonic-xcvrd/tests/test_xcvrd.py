@@ -3396,24 +3396,27 @@ class TestXcvrdScript(object):
     @patch('xcvrd.xcvrd._wrapper_get_transceiver_change_event')
     @patch('xcvrd.xcvrd.del_port_sfp_dom_info_from_db')
     @patch('xcvrd.xcvrd_utilities.media_settings_parser.notify_media_setting')
-    @patch('xcvrd.dom.dom_mgr.DomInfoUpdateTask.post_port_sfp_firmware_info_to_db')
+    @patch('xcvrd.dom_mgr.DomInfoUpdateTask.post_port_sfp_firmware_info_to_db')
+    @patch('xcvrd.xcvrd.post_port_dom_threshold_info_to_db')
     @patch('xcvrd.xcvrd.post_port_sfp_info_to_db')
     @patch('xcvrd.xcvrd.update_port_transceiver_status_table_sw')
-    @patch('xcvrd.xcvrd.platform_chassis')
-    def test_sfp_removal_from_dict(self, mock_platform_chassis, mock_update_status, mock_post_sfp_info,
-                                            mock_post_firmware_info, mock_update_media_setting,
+    @patch('xcvrd.xcvrd.delete_port_from_status_table_hw')
+    # NOTE: create=True because earlier tests (test_DaemonXcvrd_init_deinit_*) invoke
+    # DaemonXcvrd.deinit() which removes `platform_chassis` from xcvrd.xcvrd globals via
+    # `del globals()['platform_chassis']`. Without create=True, patching this attribute
+    # raises AttributeError when this test runs after those tests.
+    @patch('xcvrd.xcvrd.platform_chassis', create=True)
+    def test_sfp_removal_from_dict(self, mock_platform_chassis, mock_del_status_hw, mock_update_status, mock_post_sfp_info,
+                                            mock_post_dom_th, mock_post_firmware_info, mock_update_media_setting,
                                             mock_del_dom, mock_change_event, mock_mapping_event, mock_os_kill):
         port_mapping = PortMapping()
         mock_sfp = MagicMock()
         mock_sfp.remove_xcvr_api = MagicMock(return_value=None)
         mock_platform_chassis.get_sfp.return_value = mock_sfp
-        mock_sfp_obj_dict = MagicMock()
         stop_event = threading.Event()
         sfp_error_event = threading.Event()
-        task = SfpStateUpdateTask(DEFAULT_NAMESPACE, port_mapping, mock_sfp_obj_dict, stop_event, sfp_error_event)
+        task = SfpStateUpdateTask(DEFAULT_NAMESPACE, port_mapping, stop_event, sfp_error_event)
         task.xcvr_table_helper = XcvrTableHelper(DEFAULT_NAMESPACE)
-        task.dom_db_utils.post_port_dom_thresholds_to_db = MagicMock()
-        task.vdm_db_utils.post_port_vdm_thresholds_to_db = MagicMock()
         mock_change_event.return_value = (True, {0: 0}, {})
         mock_mapping_event.return_value = SYSTEM_NOT_READY
 
@@ -3458,8 +3461,7 @@ class TestXcvrdScript(object):
         task.task_worker(stop_event, sfp_error_event)
         assert mock_update_status.call_count == 1
         assert mock_post_sfp_info.call_count == 2  # first call and retry call
-        assert task.dom_db_utils.post_port_dom_thresholds_to_db.call_count == 0
-        assert task.vdm_db_utils.post_port_vdm_thresholds_to_db.call_count == 0
+        assert mock_post_dom_th.call_count == 0
         assert mock_post_firmware_info.call_count == 0
         assert mock_update_media_setting.call_count == 0
         assert 'Ethernet0' in task.retry_eeprom_set
@@ -3473,8 +3475,7 @@ class TestXcvrdScript(object):
         task.task_worker(stop_event, sfp_error_event)
         assert mock_update_status.call_count == 1
         assert mock_post_sfp_info.call_count == 1
-        assert task.dom_db_utils.post_port_dom_thresholds_to_db.call_count == 1
-        assert task.vdm_db_utils.post_port_vdm_thresholds_to_db.call_count == 1
+        assert mock_post_dom_th.call_count == 1
         assert mock_post_firmware_info.call_count == 0
         assert mock_update_media_setting.call_count == 1
 
