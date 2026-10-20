@@ -16,10 +16,7 @@ variables:
   - name: DIFF_COVER_WORKING_DIRECTORY
     value: $(System.DefaultWorkingDirectory)
   - name: BUILD_BRANCH
-    ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-      value: $(System.PullRequest.TargetBranch)
-    ${{ else }}:
-      value: $(Build.SourceBranchName)
+    value: 202605
 
 pr:
   branches:
@@ -97,7 +94,7 @@ jobs:
         pipeline: 142
         artifact: 'sonic-buildimage.vs'
         runVersion: 'latestFromBranch'
-        runBranch: "$(sourceBranch)"
+        runBranch: "refs/heads/202605"
         path: $(Build.ArtifactStagingDirectory)/download
         patterns: |
           target/debs/trixie/libnl-3-200_*.deb
