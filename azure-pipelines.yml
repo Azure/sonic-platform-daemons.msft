@@ -94,7 +94,7 @@ jobs:
         pipeline: 142
         artifact: 'sonic-buildimage.vs'
         runVersion: 'latestFromBranch'
-        runBranch: "$(sourceBranch)"
+        runBranch: "refs/heads/202605"
         path: $(Build.ArtifactStagingDirectory)/download
         patterns: |
           target/debs/trixie/libnl-3-200_*.deb
